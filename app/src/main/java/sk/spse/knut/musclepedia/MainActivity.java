@@ -1,78 +1,91 @@
 package sk.spse.knut.musclepedia;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
 
-    // creating a variable for
-    // our Firebase Database.
-    FirebaseDatabase firebaseDatabase;
-
-    // creating a variable for our
-    // Database Reference for Firebase.
-    DatabaseReference databaseReference;
-
-    // variable for Text view.
-    private TextView retrieveTV;
+    private EditText mSrarchField;
+    private ImageButton mSearchBtn;
+    private RecyclerView mResultList;
+    private  DatabaseReference mUserDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // below line is used to get the instance
-        // of our Firebase database.
-        firebaseDatabase = FirebaseDatabase.getInstance();
-
-        // below line is used to get
-        // reference for our database.
-        databaseReference = firebaseDatabase.getReference("koleno");
-
-        // initializing our object class variable.
-        retrieveTV = findViewById(R.id.idTVRetrieveData);
-
-        // calling method
-        // for getting data.
-        getdata();
-    }
-
-    private void getdata() {
-
-        // calling add value event listener method
-        // for getting the values from database.
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        mUserDatabase =FirebaseDatabase.getInstance().getReference("Users");
+        mSrarchField =(EditText) findViewById(R.id.search_field);
+        mSearchBtn =(ImageButton) findViewById(R.id.search_btn);
+        mResultList =(RecyclerView) findViewById(R.id.result_list);
+        mResultList.setHasFixedSize(true);
+        mResultList.setLayoutManager(new LinearLayoutManager(this));
+        mSearchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // this method is call to get the realtime
-                // updates in the data.
-                // this method is called when the data is
-                // changed in our Firebase console.
-                // below line is for getting the data from
-                // snapshot of our database.
-                String value = snapshot.getValue(String.class);
-
-                // after getting the value we are setting
-                // our value to our text view in below line.
-                retrieveTV.setText(value);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                // calling on cancelled method when we receive
-                // any error or we are not able to get the data.
-                Toast.makeText(MainActivity.this, "Fail to get data.", Toast.LENGTH_SHORT).show();
+            public void onClick(View view) {
+                firebaseUserSearch(searchText);
             }
         });
+
     }
+    private void firebaseUserSearch(String searchText){
+        Query firebaseSearchQuery= mUserDatabase.orderByChild("name").startAt(searchText).endAt(searchText + "\uf8ff");
+        FirebaseRecyclerAdapter<Users, UsersViewHolder> firebaseRecyclerAdapter =new FirebaseRecyclerAdapter<Users,UsersViewHolder>(
+                Users.class,
+                R.layout.list_layout,
+                UsersViewHolder.class,
+                mUserDatabase
+        ){
+            @Override
+            protected void onBindViewHolder(@NonNull UsersViewHolder holder, int position, @NonNull Users model) {
+
+            }
+
+            @NonNull
+            @Override
+            public UsersViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                return null;
+            }
+
+        };
+        mResultList.setAdapter(firebaseRecyclerAdapter);
+    }
+    public static class UsersViewHolder extends RecyclerView.ViewHolder{
+        View mView;
+        public UsersViewHolder(View itemView){
+            super(itemView);
+            mView=itemView;
+        }
+        public void setDetails(Context ctx,String userName, String userStatus, String userImage){
+            TextView user_name =(TextView) mView.findViewById(R.id.name_text);
+            TextView user_status =(TextView) mView.findViewById(R.id.status_text);
+            ImageView user_image =(ImageView) mView.findViewById(R.id.profile_image);
+
+            user_name.setText(userName);
+            user_status.setText(userStatus);
+            Glide.with(ctx).load(userImage).into(user_image);
+        }
+    }
+
 }
