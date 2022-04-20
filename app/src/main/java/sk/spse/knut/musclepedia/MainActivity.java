@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         // below line is used to get
         // reference for our database.
-        databaseReference = firebaseDatabase.getReference("Data");
+        databaseReference = firebaseDatabase.getReference("koleno");
 
         // initializing our object class variable.
         retrieveTV = findViewById(R.id.idTVRetrieveData);
